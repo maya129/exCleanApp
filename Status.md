@@ -1,9 +1,9 @@
-# Project Status (Updated: 2026-02-17)
+# Project Status (Updated: 2026-02-18)
 
 ## Project: Ex-Eraser
 
 **Platform:** iOS (React Native)
-**Phase:** Phase 1 — Foundation
+**Phase:** Phase 2 — Native Bridges (Complete)
 **Framework:** React Native 0.76+ / TypeScript / Swift Native Modules
 
 ---
@@ -45,8 +45,11 @@ exCleanApp/
 │       └── spacing.ts              # Layout constants
 ├── ios/ExEraser/
 │   ├── FaceDetectionModule.swift   # Apple Vision face matching
+│   ├── FaceDetectionModule.m       # ObjC bridge registration
 │   ├── PhotoKitModule.swift        # Photo library access
+│   ├── PhotoKitModule.m            # ObjC bridge registration
 │   ├── EventKitModule.swift        # Calendar access
+│   ├── EventKitModule.m            # ObjC bridge registration
 │   └── ExEraser-Bridging-Header.h  # Swift/ObjC bridge
 ├── __tests__/                      # Unit & integration tests
 ├── tmp/                            # Temporary files (gitignored)
@@ -59,8 +62,8 @@ exCleanApp/
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| **Phase 1: Foundation** | RN project setup, navigation, design system, theme, auth | **In Progress** |
-| **Phase 2: Native Bridges** | FaceDetectionBridge, PhotoKitBridge, EventKitBridge | Pending |
+| **Phase 1: Foundation** | RN project setup, navigation, design system, theme, auth | **Complete** |
+| **Phase 2: Native Bridges** | FaceDetectionBridge, PhotoKitBridge, EventKitBridge | **Complete** |
 | **Phase 3: Scan Engine** | Scan orchestration, review gallery, batch processing | Pending |
 | **Phase 4: Vault** | Encryption, biometric lock, vault UI, restore flow | Pending |
 | **Phase 5: Cooling Off** | Deletion queue, background tasks, notifications | Pending |
@@ -86,8 +89,15 @@ exCleanApp/
 - [x] Phase 1: Reusable components built (Button, Card, ProgressBar, Toast, PhotoGrid, ThumbnailItem)
 - [x] Phase 1: Navigation shell set up (React Navigation 7 stack)
 - [x] Phase 1: App entry point wired (App → Providers → Navigation)
-- [ ] Phase 1: Auth flow (Firebase Auth + Apple Sign-In) — next
+- [ ] Phase 1: Auth flow (Firebase Auth + Apple Sign-In) — deferred
 - [ ] Phase 1: `npm install` + verify build — requires Node 18+
+- [x] **Phase 2: ObjC bridge registration files** — FaceDetectionModule.m, PhotoKitModule.m, EventKitModule.m
+- [x] **Phase 2: FaceDetectionModule** — RCTEventEmitter, Vision framework face detection + cropped pixel comparison, batch processing with autoreleasepool, progress events
+- [x] **Phase 2: PhotoKitModule** — fetchAssetsByDateRange (PHFetchOptions date predicate), exportAsset (image + video via PHImageManager), deleteAsset (PHAssetChangeRequest.deleteAssets)
+- [x] **Phase 2: EventKitModule** — searchEvents (title/notes/location/attendees, case-insensitive), deleteEvent, exportEvent (full JSON serialization), getAuthorizationStatus (iOS 17+ branching)
+- [x] **Phase 2: TypeScript bridges updated** — ScanProgressEvent + NativeEventEmitter on FaceDetectionBridge, getAuthorizationStatus on EventKitBridge
+- [x] **Phase 2: permissions.ts wired** — requestPermission/checkPermission routed to PhotoKitBridge + EventKitBridge with status mapping
+- [x] **Phase 2: scanEngine.ts wired** — scanFaces (NativeEventEmitter progress listener + FaceDetectionBridge.scanLibrary), scanDateRanges (PhotoKitBridge.fetchAssetsByDateRange loop), scanCalendar (EventKitBridge.searchEvents with 5-year lookback)
 
 ---
 
@@ -96,6 +106,52 @@ exCleanApp/
 - [ ] iOS message access is limited — v1 will use guided approach (see TechSpec §4.4)
 - [ ] iOS 17+ "Limited Photo Access" handling needs UX design
 - [ ] RevenueCat product IDs TBD (need App Store Connect setup)
+- [ ] Face matching uses pixel comparison fallback — VNGenerateFacePrintRequest available on iOS 18+ for improved accuracy
+- [ ] Auth flow (Firebase Auth + Apple Sign-In) not yet implemented
+- [ ] Full build verification pending (requires Node 18+ environment)
+
+---
+
+## Security & Apple Privacy Audit (2026-02-18)
+
+### Audit Scope
+Full codebase review covering: data leakage, API safety, vault encryption, orphaned code, dependency security, Apple Privacy Guidelines compliance, and data minimization.
+
+### Findings & Remediation
+
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| 1 | CRITICAL | Encryption entirely unimplemented — vault files stored in plaintext | **Deferred to Phase 4** (no user data handled before then) |
+| 2 | CRITICAL | Vault biometric auth is a TODO — `unlock()` has no auth challenge | **Deferred to Phase 4** (vault not functional yet) |
+| 3 | HIGH | PII (name, phone, UID) logged unconditionally in production | **FIXED** — All info/warn/debug logs gated behind `__DEV__`, Swift NSLog redacts PII |
+| 4 | HIGH | Face matching uses raw pixel comparison, not Vision face embeddings | **Known limitation** — VNGenerateFacePrintRequest for iOS 18+ planned |
+| 5 | HIGH | No authentication flow implemented — all screens accessible | **Deferred** — Firebase Auth + Apple Sign-In is Phase 1 backlog |
+| 6 | HIGH | `generateId()` uses `Math.random()` — not cryptographically secure | **FIXED** — Now uses `crypto.getRandomValues()` |
+| 7 | HIGH | ExProfile PII has no memory zeroing or persistence protection | **Noted** — Zustand is in-memory only, no persistence configured |
+| 8 | MEDIUM | Calendar export captures all attendee emails into unencrypted vault | **Deferred to Phase 4** (vault encryption will cover this) |
+| 9 | MEDIUM | Face scan downloads iCloud photos with no data-usage warning | **Noted** — Will add Wi-Fi check in Phase 3 |
+| 10 | MEDIUM | `restoreAsset`/`restoreEvent` stubs resolve with `""` masking failure | **Noted** — Phase 4 will implement real logic |
+| 11 | MEDIUM | `permanentlyDelete` received `as any` cast — type safety bypass | **FIXED** — Now properly typed as `VaultItem[]` |
+| 12 | LOW | `settings.json` (Claude Code config) tracked in git | **FIXED** — Added to `.gitignore` |
+| 13 | LOW | `hooks/` directory not gitignored | **FIXED** — Added to `.gitignore` |
+| 14 | LOW | Firebase packages installed but no `GoogleService-Info.plist` | **Known** — Will be added during auth implementation |
+| 15 | INFO | No test files exist despite Jest being configured | **Noted** — Tests planned for Phase 7 |
+
+### Apple Privacy Compliance Status
+
+| Requirement | Status |
+|-------------|--------|
+| On-device face recognition (no server processing) | **Compliant** — All Vision framework processing is on-device |
+| Principle of Least Privilege | **Compliant** — Only photos + calendar permissions requested |
+| Info.plist permission strings | **Pending** — Need NSPhotoLibraryUsageDescription, NSCalendarsUsageDescription, NSFaceIDUsageDescription |
+| No PII sent to backend | **Compliant** — No network calls to backend, all data local |
+| Data minimization | **Compliant** — Only scan results and vault items stored |
+
+### Critical Pre-Launch Blockers
+1. Encryption must be implemented before any real user data is handled (Phase 4)
+2. Biometric auth must gate vault access before App Store submission
+3. Info.plist privacy strings must be added before build
+4. Firebase `GoogleService-Info.plist` required for auth
 
 ---
 

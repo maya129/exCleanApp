@@ -1,16 +1,22 @@
 /**
  * TypeScript interface for the FaceDetectionModule native bridge.
  * Native implementation: ios/ExEraser/FaceDetectionModule.swift
- * Uses Apple Vision: VNDetectFaceRectanglesRequest, VNGenerateFacePrintRequest
+ * Uses Apple Vision: VNDetectFaceRectanglesRequest, cropped face pixel comparison
  */
 
-import { NativeModules } from 'react-native';
+import { NativeModules, NativeEventEmitter } from 'react-native';
 
 export interface FaceMatch {
   assetId: string;
   confidence: number;
   thumbnailUri: string;
   date: string;
+}
+
+export interface ScanProgressEvent {
+  processed: number;
+  total: number;
+  batchMatches: number;
 }
 
 export interface FaceDetectionBridgeInterface {
@@ -39,5 +45,7 @@ export interface FaceDetectionBridgeInterface {
 }
 
 const { FaceDetectionModule } = NativeModules;
+
+export const FaceDetectionEvents = new NativeEventEmitter(FaceDetectionModule);
 
 export default FaceDetectionModule as FaceDetectionBridgeInterface;

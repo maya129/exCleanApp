@@ -8,7 +8,7 @@ import { logger } from '../utils/logger';
 import { isExpired, daysRemaining } from '../utils/dates';
 import { COOLING_OFF_REMINDER_DAY, COOLING_OFF_DAYS } from '../utils/constants';
 import { permanentlyDelete, loadCoolingOffItems, loadVaultItems } from './vaultManager';
-import type { CoolingOffItem } from '../store/vaultStore';
+import type { CoolingOffItem, VaultItem } from '../store/vaultStore';
 
 const TAG = 'CoolingOff';
 
@@ -41,13 +41,13 @@ export async function processCoolingOffQueue(): Promise<void> {
 
 async function handleExpiredItem(
   item: CoolingOffItem,
-  vaultItems: { id: string }[],
+  vaultItems: VaultItem[],
 ): Promise<void> {
   logger.info(TAG, `Item expired: ${item.vaultItemId}`);
 
   const vaultItem = vaultItems.find((v) => v.id === item.vaultItemId);
   if (vaultItem) {
-    await permanentlyDelete(vaultItem as any);
+    await permanentlyDelete(vaultItem);
   }
   // TODO: update cooling_off record status to 'deleted' in DB
 }

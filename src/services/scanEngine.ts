@@ -7,6 +7,13 @@
 import { logger } from '../utils/logger';
 import { SCAN_BATCH_SIZE, FACE_MATCH_THRESHOLD } from '../utils/constants';
 import type { ExProfile, ScanResult, ScanPhase, CleanupSummary } from '../store/scanStore';
+import FaceDetectionBridge, {
+  FaceDetectionEvents,
+  type FaceMatch,
+  type ScanProgressEvent,
+} from '../native/FaceDetectionBridge';
+import PhotoKitBridge, { type PhotoAsset } from '../native/PhotoKitBridge';
+import EventKitBridge, { type CalendarEvent } from '../native/EventKitBridge';
 
 const TAG = 'ScanEngine';
 
@@ -28,7 +35,6 @@ export async function runScan(
   callbacks: ScanCallbacks,
 ): Promise<void> {
   logger.info(TAG, 'Starting scan pipeline', {
-    name: profile.name,
     referencePhotos: profile.referencePhotoUris.length,
     dateRanges: profile.dateRanges?.length ?? 0,
   });
@@ -94,31 +100,122 @@ export function buildSummary(results: ScanResult[]): CleanupSummary {
   };
 }
 
-// --- Phase implementations (stubs — wired to native bridges in Phase 2) ---
+// --- Phase implementations (wired to native bridges) ---
 
 async function scanFaces(
-  _profile: ExProfile,
-  _onProgress: (p: number) => void,
+  profile: ExProfile,
+  onProgress: (p: number) => void,
 ): Promise<ScanResult[]> {
-  // TODO: Phase 2 — call FaceDetectionBridge.scanLibrary(referencePhotoUris, threshold, batchSize)
-  logger.warn(TAG, 'scanFaces: stub — native bridge not yet wired');
-  return [];
+  logger.info(TAG, 'scanFaces: starting face scan via native bridge');
+
+  // Subscribe to progress events from native
+  const progressListener = FaceDetectionEvents.addListener(
+    'onScanProgress',
+    (event: ScanProgressEvent) => {
+      if (event.total > 0) {
+        onProgress(event.processed / event.total);
+      }
+      logger.debug(TAG, `scanFaces progress: ${event.processed}/${event.total} (batch matches: ${event.batchMatches})`);
+    },
+  );
+
+  try {
+    const matches: FaceMatch[] = await FaceDetectionBridge.scanLibrary(
+      profile.referencePhotoUris,
+      FACE_MATCH_THRESHOLD,
+      SCAN_BATCH_SIZE,
+    );
+
+    logger.info(TAG, `scanFaces: native bridge returned ${matches.length} matches`);
+
+    return matches.map((match, index) => ({
+      id: `face_${match.assetId}_${index}`,
+      assetId: match.assetId,
+      type: 'photo' as const,
+      matchType: 'face' as const,
+      confidence: match.confidence,
+      thumbnailUri: match.thumbnailUri,
+      date: match.date,
+    }));
+  } finally {
+    progressListener.remove();
+  }
 }
 
 async function scanDateRanges(
-  _ranges: { start: string; end: string }[],
-  _onProgress: (p: number) => void,
+  ranges: { start: string; end: string }[],
+  onProgress: (p: number) => void,
 ): Promise<ScanResult[]> {
-  // TODO: Phase 2 — call PhotoKitBridge.fetchAssetsByDateRange(ranges)
-  logger.warn(TAG, 'scanDateRanges: stub — native bridge not yet wired');
-  return [];
+  logger.info(TAG, `scanDateRanges: scanning ${ranges.length} date ranges`);
+
+  const allResults: ScanResult[] = [];
+
+  for (let i = 0; i < ranges.length; i++) {
+    const range = ranges[i];
+    logger.info(TAG, `scanDateRanges: fetching range ${i + 1}/${ranges.length} — ${range.start} to ${range.end}`);
+
+    const assets: PhotoAsset[] = await PhotoKitBridge.fetchAssetsByDateRange(
+      range.start,
+      range.end,
+    );
+
+    logger.info(TAG, `scanDateRanges: range ${i + 1} returned ${assets.length} assets`);
+
+    const results: ScanResult[] = assets.map((asset, index) => ({
+      id: `date_${asset.id}_${index}`,
+      assetId: asset.id,
+      type: (asset.mediaType === 'video' ? 'video' : 'photo') as 'photo' | 'video',
+      matchType: 'date_range' as const,
+      confidence: 1.0, // Date range matches are exact
+      thumbnailUri: asset.thumbnailUri,
+      date: asset.creationDate,
+    }));
+
+    allResults.push(...results);
+    onProgress((i + 1) / ranges.length);
+  }
+
+  logger.info(TAG, `scanDateRanges: total ${allResults.length} assets across all ranges`);
+  return allResults;
 }
 
 async function scanCalendar(
-  _profile: ExProfile,
-  _onProgress: (p: number) => void,
+  profile: ExProfile,
+  onProgress: (p: number) => void,
 ): Promise<ScanResult[]> {
-  // TODO: Phase 2 — call EventKitBridge.searchEvents(name, phoneNumber)
-  logger.warn(TAG, 'scanCalendar: stub — native bridge not yet wired');
-  return [];
+  logger.info(TAG, 'scanCalendar: searching events for target profile');
+
+  // 5-year lookback from today
+  const now = new Date();
+  const fiveYearsAgo = new Date(now);
+  fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+
+  const fromDate = fiveYearsAgo.toISOString();
+  const toDate = now.toISOString();
+
+  onProgress(0.1);
+
+  const events: CalendarEvent[] = await EventKitBridge.searchEvents(
+    profile.name,
+    profile.phoneNumber,
+    fromDate,
+    toDate,
+  );
+
+  onProgress(0.9);
+
+  logger.info(TAG, `scanCalendar: found ${events.length} matching calendar events`);
+
+  const results: ScanResult[] = events.map((event, index) => ({
+    id: `cal_${event.eventId}_${index}`,
+    assetId: event.eventId,
+    type: 'calendar_event' as const,
+    matchType: 'contact' as const,
+    confidence: 1.0, // Calendar matches are exact text matches
+    thumbnailUri: '', // Calendar events have no thumbnail
+    date: event.startDate,
+  }));
+
+  onProgress(1);
+  return results;
 }

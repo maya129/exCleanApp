@@ -30,3 +30,7 @@ local.properties
 
 # CocoaPods
 Podfile.lock
+
+# Claude Code config
+settings.json
+hooks/

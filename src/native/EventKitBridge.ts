@@ -47,6 +47,12 @@ export interface EventKitBridgeInterface {
    * Request calendar access.
    */
   requestAccess(): Promise<boolean>;
+
+  /**
+   * Check current calendar authorization status without prompting.
+   * Returns: 'authorized' | 'limited' | 'denied' | 'notDetermined'
+   */
+  getAuthorizationStatus(): Promise<string>;
 }
 
 const { EventKitModule } = NativeModules;

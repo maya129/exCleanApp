@@ -1,7 +1,10 @@
 /**
  * Centralized logger for Ex-Eraser.
  * Every execution flow must include detailed logging (Claude.md rule #5).
- * In production, swap console calls for a structured logging service.
+ *
+ * SECURITY: In production builds, only 'error' level logs are emitted.
+ * All info/warn/debug logs are gated behind __DEV__ to prevent PII leakage
+ * to device system logs (Finding 3 — Security Audit 2026-02-18).
  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -17,13 +20,18 @@ function log(level: LogLevel, tag: string, message: string, data?: unknown) {
       if (__DEV__) console.debug(timestamp, formatted, data ?? '');
       break;
     case 'info':
-      console.info(timestamp, formatted, data ?? '');
+      if (__DEV__) console.info(timestamp, formatted, data ?? '');
       break;
     case 'warn':
-      console.warn(timestamp, formatted, data ?? '');
+      if (__DEV__) console.warn(timestamp, formatted, data ?? '');
       break;
     case 'error':
-      console.error(timestamp, formatted, data ?? '');
+      // Errors always log, but strip data payload in production
+      if (__DEV__) {
+        console.error(timestamp, formatted, data ?? '');
+      } else {
+        console.error(timestamp, formatted);
+      }
       break;
   }
 }
