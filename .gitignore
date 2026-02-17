@@ -1,0 +1,32 @@
+node_modules/
+.env
+tmp/
+*.log
+.DS_Store
+
+# iOS
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+local.properties
+
+# Metro
+.metro-health-check*
+
+# React Native
+*.jsbundle
+
+# CocoaPods
+Podfile.lock
