@@ -90,7 +90,7 @@ exCleanApp/
 - [x] Phase 1: Navigation shell set up (React Navigation 7 stack)
 - [x] Phase 1: App entry point wired (App → Providers → Navigation)
 - [ ] Phase 1: Auth flow (Firebase Auth + Apple Sign-In) — deferred
-- [ ] Phase 1: `npm install` + verify build — requires Node 18+
+- [x] Phase 1: `npm install` via fnm Node 18 — 891 packages installed
 - [x] **Phase 2: ObjC bridge registration files** — FaceDetectionModule.m, PhotoKitModule.m, EventKitModule.m
 - [x] **Phase 2: FaceDetectionModule** — RCTEventEmitter, Vision framework face detection + cropped pixel comparison, batch processing with autoreleasepool, progress events
 - [x] **Phase 2: PhotoKitModule** — fetchAssetsByDateRange (PHFetchOptions date predicate), exportAsset (image + video via PHImageManager), deleteAsset (PHAssetChangeRequest.deleteAssets)
@@ -98,6 +98,13 @@ exCleanApp/
 - [x] **Phase 2: TypeScript bridges updated** — ScanProgressEvent + NativeEventEmitter on FaceDetectionBridge, getAuthorizationStatus on EventKitBridge
 - [x] **Phase 2: permissions.ts wired** — requestPermission/checkPermission routed to PhotoKitBridge + EventKitBridge with status mapping
 - [x] **Phase 2: scanEngine.ts wired** — scanFaces (NativeEventEmitter progress listener + FaceDetectionBridge.scanLibrary), scanDateRanges (PhotoKitBridge.fetchAssetsByDateRange loop), scanCalendar (EventKitBridge.searchEvents with 5-year lookback)
+- [x] **Security Audit (2026-02-18)** — PII logging gated behind __DEV__, generateId() uses crypto.getRandomValues(), coolingOff.ts fixed type safety, .gitignore updated
+- [x] **Environment Setup** — fnm installed (Node 18.20.8), npm install successful, react-native-local-authentication → react-native-biometrics
+- [x] **Storybook Setup** — @storybook/react-native v8, .storybook/ config, metro.config.js, STORYBOOK_ENABLED toggle in index.js
+- [x] **UI: Onboarding Screen** — 4-step animated flow (Welcome → Promise → How It Works → Ready), progress dots, back navigation, Storybook story
+- [x] **UI: Target Selection Screen** — Name/phone inputs, 5-slot photo reference grid, shake validation, privacy banner, wired into navigation, Storybook story
+- [x] **UI: Vault Screen** — Locked/unlocked states, filter tabs, 3-column thumbnail grid, item detail modal with restore/delete actions, spring unlock animation, Storybook stories (Locked, WithItems, Empty)
+- [x] **UI: Button Component Story** — All variants (primary, secondary, danger, ghost) + sizes + disabled state
 
 ---
 
