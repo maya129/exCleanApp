@@ -8,12 +8,14 @@ import { ReviewGalleryScreen } from '../screens/Scan/ReviewGalleryScreen';
 import { VaultScreen } from '../screens/Vault/VaultScreen';
 import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
 import { SettingsScreen } from '../screens/Settings/SettingsScreen';
+import { TargetSelectionScreen } from '../screens/Onboarding/TargetSelectionScreen';
 import { logger } from '../utils/logger';
 
 const TAG = 'Navigation';
 
 export type RootStackParamList = {
   Onboarding: undefined;
+  TargetSelection: undefined;
   Dashboard: undefined;
   Scan: undefined;
   ReviewGallery: undefined;
@@ -43,9 +45,22 @@ export function Navigation() {
           {({ navigation }) => (
             <OnboardingScreen
               onComplete={() => {
-                logger.info(TAG, 'Onboarding complete → Dashboard');
+                logger.info(TAG, 'Onboarding complete → TargetSelection');
+                navigation.navigate('TargetSelection');
+              }}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen name="TargetSelection">
+          {({ navigation }) => (
+            <TargetSelectionScreen
+              onComplete={(profile) => {
+                logger.info(TAG, 'Target selected → Dashboard');
+                // Store profile in scanStore, then proceed
                 navigation.reset({ index: 0, routes: [{ name: 'Dashboard' }] });
               }}
+              onBack={() => navigation.goBack()}
             />
           )}
         </Stack.Screen>
