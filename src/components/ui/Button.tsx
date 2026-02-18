@@ -25,14 +25,14 @@ export function Button({
   const containerStyle: ViewStyle[] = [
     styles.base,
     variantStyles[variant].container,
-    size === 'small' && styles.small,
-    disabled && styles.disabled,
+    ...(size === 'small' ? [styles.small] : []),
+    ...(disabled ? [styles.disabled] : []),
   ];
 
   const textStyle: TextStyle[] = [
     size === 'small' ? styles.smallText : styles.text,
     variantStyles[variant].text,
-    disabled && styles.disabledText,
+    ...(disabled ? [styles.disabledText] : []),
   ];
 
   return (

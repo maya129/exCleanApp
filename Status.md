@@ -105,17 +105,21 @@ exCleanApp/
 - [x] **UI: Target Selection Screen** — Name/phone inputs, 5-slot photo reference grid, shake validation, privacy banner, wired into navigation, Storybook story
 - [x] **UI: Vault Screen** — Locked/unlocked states, filter tabs, 3-column thumbnail grid, item detail modal with restore/delete actions, spring unlock animation, Storybook stories (Locked, WithItems, Empty)
 - [x] **UI: Button Component Story** — All variants (primary, secondary, danger, ghost) + sizes + disabled state
+- [x] **iOS Project Setup** — Full Xcode project (ExEraser.xcodeproj) with AppDelegate, main.m, LaunchScreen, Info.plist with privacy strings, PrivacyInfo.xcprivacy
+- [x] **Native Modules Integrated** — 3 Swift + 3 ObjC files added to PBXGroup, PBXSourcesBuildPhase, bridging header configured
+- [x] **CocoaPods Installed** — 86 pods installed (React 0.76.9, Firebase 11.11.0, RevenueCat 5.32.0, Hermes, etc.)
+- [x] **Dependencies Fixed** — CocoaPods upgraded to 1.16.2, react-native-screens pinned to 4.4.0, @react-native-community/cli added, modular headers enabled
 
 ---
 
 ## Known Issues / Pending Tasks
 
+- [ ] **Xcode 15.1+ required** — Current Xcode is 13.1, RN 0.76 requires 15.1+. Update from App Store before building.
 - [ ] iOS message access is limited — v1 will use guided approach (see TechSpec §4.4)
 - [ ] iOS 17+ "Limited Photo Access" handling needs UX design
 - [ ] RevenueCat product IDs TBD (need App Store Connect setup)
 - [ ] Face matching uses pixel comparison fallback — VNGenerateFacePrintRequest available on iOS 18+ for improved accuracy
 - [ ] Auth flow (Firebase Auth + Apple Sign-In) not yet implemented
-- [ ] Full build verification pending (requires Node 18+ environment)
 
 ---
 
@@ -150,7 +154,7 @@ Full codebase review covering: data leakage, API safety, vault encryption, orpha
 |-------------|--------|
 | On-device face recognition (no server processing) | **Compliant** — All Vision framework processing is on-device |
 | Principle of Least Privilege | **Compliant** — Only photos + calendar permissions requested |
-| Info.plist permission strings | **Pending** — Need NSPhotoLibraryUsageDescription, NSCalendarsUsageDescription, NSFaceIDUsageDescription |
+| Info.plist permission strings | **Compliant** — NSPhotoLibraryUsageDescription, NSCalendarsUsageDescription, NSFaceIDUsageDescription all configured |
 | No PII sent to backend | **Compliant** — No network calls to backend, all data local |
 | Data minimization | **Compliant** — Only scan results and vault items stored |
 

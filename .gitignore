@@ -8,6 +8,7 @@ tmp/
 ios/Pods/
 ios/build/
 ios/*.xcworkspace
+ios/.xcode.env.local
 *.pbxuser
 *.mode1v3
 *.mode2v3

@@ -23,12 +23,15 @@
     "react-native-biometrics": "^3.0.1",
     "react-native-purchases": "^8.0.0",
     "react-native-safe-area-context": "^5.0.0",
-    "react-native-screens": "^4.4.0",
+    "react-native-screens": "4.4.0",
     "react-native-sqlite-storage": "^6.0.1",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/cli": "^20.0.1",
+    "@react-native-community/cli-platform-android": "^20.1.1",
+    "@react-native-community/cli-platform-ios": "^20.1.1",
     "@react-native/eslint-config": "^0.76.0",
     "@storybook/addon-ondevice-actions": "^8.6.4",
     "@storybook/addon-ondevice-controls": "^8.6.4",
